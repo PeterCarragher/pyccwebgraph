@@ -173,7 +173,7 @@ webgraph = CCWebgraph.setup()
 # Find domains that link TO seeds (backlinks)
 results = webgraph.discover_backlinks(
     seeds=["cnn.com", "bbc.com", "nytimes.com"],
-    min_connections=3  # Must link to ≥10 of the seeds
+    min_connections=10  # Must link to ≥10 of the seeds
 )
 
 print(f"Found {len(results['nodes'])} domains")
@@ -187,7 +187,7 @@ print(f"Top result: {results['nodes'][0]}")
 # Get results as NetworkX graph
 G = webgraph.discover_backlinks(
     seeds=["cnn.com", "bbc.com"],
-    min_connections=2,
+    min_connections=5,
     format='networkx'  # Returns nx.DiGraph
 )
 
@@ -211,13 +211,13 @@ net.show("network.html")
 
 ### Performance: Large Graphs with NetworKit
 
-For large discovered subgraphs (>100K nodes), use NetworKit instead of NetworkX:
+For large discovered subgraphs (>100K nodes), use NetworKit instead of NetworkX for 10-100x speedup:
 
 ```python
 # Discover large subgraph
 G_nk, name_map = webgraph.discover_backlinks(
     seeds=seed_list,
-    min_connections=len(seed_list),
+    min_connections=2,
     format='networkit'  # Returns NetworKit graph
 )
 
