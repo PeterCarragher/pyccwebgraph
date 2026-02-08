@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyccwebgraph"
+version = "0.1.0"
+description = "Python interface to CommonCrawl's 93M domain webgraph for network analysis and domain discovery"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Peter Carragher", email = "pcarragh@andrew.cmu.edu"},
+]
+keywords = ["webgraph", "commoncrawl", "network-analysis", "domain-discovery", "graph"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = [
+    "py4j>=0.10.9",
+    "tqdm>=4.0.0",
+    "psutil>=5.0.0",
+]
+
+[project.optional-dependencies]
+networkx = ["networkx>=2.6"]
+networkit = ["networkit>=10.0"]
+igraph = ["python-igraph>=0.10"]
+pandas = ["pandas>=1.3"]
+all = [
+    "networkx>=2.6",
+    "networkit>=10.0",
+    "python-igraph>=0.10",
+    "pandas>=1.3",
+]
+notebooks = [
+    "networkx>=2.6",
+    "pandas>=1.3",
+    "jupyter>=1.0",
+    "matplotlib>=3.5",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "networkx>=2.6",
+    "pandas>=1.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/PeterCarragher/NetNeighbors"
+Documentation = "https://pyccwebgraph.readthedocs.io/"
+Repository = "https://github.com/PeterCarragher/NetNeighbors"
+Issues = "https://github.com/PeterCarragher/NetNeighbors/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pyccwebgraph = ["jars/*.jar", "jars/*.class"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

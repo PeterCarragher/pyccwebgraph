@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src/pyccwebgraph/__init__.py
+src/pyccwebgraph/ccwebgraph.py
+src/pyccwebgraph/converters.py
+src/pyccwebgraph/download.py
+src/pyccwebgraph/setup_utils.py
+src/pyccwebgraph.egg-info/PKG-INFO
+src/pyccwebgraph.egg-info/SOURCES.txt
+src/pyccwebgraph.egg-info/dependency_links.txt
+src/pyccwebgraph.egg-info/requires.txt
+src/pyccwebgraph.egg-info/top_level.txt
+tests/test_bridge.py
+tests/test_converters.py
+tests/test_setup.py
