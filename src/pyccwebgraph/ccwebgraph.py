@@ -669,3 +669,73 @@ class CCWebgraph:
                  for d in domains]
         edges = [(d, s) for d in domains for s in seed_set]
         return DiscoveryResult(nodes=nodes, edges=edges, seeds=list(seed_set))
+
+    # ------------------------------------------------------------------ #
+    #  Edge Lookup
+    # ------------------------------------------------------------------ #
+
+    def get_links_between(
+        self,
+        domains_from: List[str],
+        domains_to: List[str],
+    ) -> List[Tuple[str, str]]:
+        """
+        Find all edges between two sets of domains.
+
+        Returns edges where the source is in domains_from and the target
+        is in domains_to. This checks the forward graph (outlinks direction).
+
+        Performance: Makes one JVM call per source domain to fetch successors,
+        then filters Python-side. For M sources and N targets, this is O(M)
+        JVM calls rather than O(M*N) edge existence checks.
+
+        Args:
+            domains_from: List of source domain names (normal format).
+            domains_to: List of target domain names (normal format).
+
+        Returns:
+            List of (source, target) domain name tuples for edges that exist
+            in the webgraph. Returns empty list if no edges found.
+
+        Example::
+
+            # Find which news sites link to fact-checkers
+            edges = wg.get_links_between(
+                domains_from=["cnn.com", "bbc.com", "nytimes.com"],
+                domains_to=["snopes.com", "factcheck.org"]
+            )
+            # Returns: [("cnn.com", "snopes.com"), ...]
+        """
+        self._ensure_loaded()
+
+        # Build target ID set for O(1) lookup
+        target_id_to_domain: Dict[int, str] = {}
+        for domain in domains_to:
+            clean = domain.strip().lower()
+            vid = self._lookup_id(clean)
+            if vid >= 0:
+                target_id_to_domain[vid] = clean
+        target_ids = set(target_id_to_domain.keys())
+
+        if not target_ids:
+            return []
+
+        # For each source, get successors and intersect with targets
+        edges: List[Tuple[str, str]] = []
+
+        for domain in domains_from:
+            clean = domain.strip().lower()
+            source_id = self._lookup_id(clean)
+            if source_id < 0:
+                continue
+
+            # Get all outlinks from this source
+            java_successors = self.graph.successors(source_id)
+            successor_ids = self._java_int_array_to_list(java_successors)
+
+            # Set intersection - O(min(N, S)) instead of O(S)
+            matching_ids = target_ids & set(successor_ids)
+            for match_id in matching_ids:
+                edges.append((clean, target_id_to_domain[match_id]))
+
+        return edges

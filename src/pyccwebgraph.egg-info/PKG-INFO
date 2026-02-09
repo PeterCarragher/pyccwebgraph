@@ -57,123 +57,36 @@ Dynamic: license-file
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Discover related domains using link topology from CommonCrawl's 93M domain webgraph.**
-
-pyccwebgraph provides a simple Python interface to query CommonCrawl's webgraph data for domain discovery, network analysis, and misinformation research. Built for data scientists and researchers who want to leverage billion-edge web graphs without JVM expertise.
-
-```python
-from pyccwebgraph import CCWebgraph
-
-# One-time setup (downloads ~23GB graph data)
-webgraph = CCWebgraph.setup()
-
-# Discover domains that link to CNN and BBC (backlinks)
-G = webgraph.discover_backlinks(
-    seeds=["cnn.com", "bbc.com"],
-    min_connections=5,
-)
-
-print(f"Found {G.number_of_nodes()} related domains")
-
-# Run PageRank
-import networkx as nx
-pr = nx.pagerank(G)
-print(f"Top domain: {max(pr, key=pr.get)}")
-```
-
----
-
-## 🚀 Quick Start
+Discover related domains using link topology from CommonCrawl's webgraph.
 
 ### Installation
 
 **Prerequisites:**
 - Python 3.8+
-- Java 17+ ([install instructions](#java-installation))
+- Java 17+ ([install instructions](https://www.java.com/en/download/help/linux_install.html))
 - ~30GB disk space for webgraph data
 
-**Install from PyPI:**
 ```bash
 pip install pyccwebgraph
 ```
 
-**First use (downloads graph data):**
+**First use downloads graph data:**
 ```python
-from pyccwebgraph import CCWebgraph
+from pyccwebgraph import CCWebgraph, get_available_versions
 
-# Downloads ~23GB to ~/.pyccwebgraph/data (one time only)
-webgraph = CCWebgraph.setup()
-```
+# List available versions
+versions = get_available_versions()
+print(versions[:3])  # ['cc-main-2024-nov-dec-jan', 'cc-main-2024-feb-apr-may', ...]
 
-**Subsequent uses (graph already downloaded):**
-```python
-from pyccwebgraph import CCWebgraph
-
-# Loads in ~5 seconds, then queries are instant
-webgraph = CCWebgraph.setup()
-```
-
----
-
-## 📊 What This Library Does
-
-pyccwebgraph bridges the gap between CommonCrawl's **Java-based webgraph tools** and **Python data science workflows**. It enables you to:
-
-✅ **Discover related domains** via backlinks or outlinks  
-✅ **Convert to NetworkX, NetworKit, or igraph** for analysis  
-✅ **Run network algorithms** (PageRank, community detection, centrality)  
-✅ **Work with billion-edge graphs** in Python efficiently  
-
-**Data source:** [CommonCrawl Webgraph](https://commoncrawl.org/web-graphs)  
-- **93.9M domains**, **1.6B edges** (domain-level)
-- Updated monthly with new crawl data
-- Topology only (no content or timestamps)
-
----
-
-## 🎯 When to Use pyccwebgraph
-
-### Use pyccwebgraph when you want to:
-
-✅ **Discover domain networks** interactively in Python/Jupyter  
-✅ **Extract subgraphs** for analysis (e.g., all domains linking to a seed set)  
-✅ **Convert webgraph data** to NetworkX/NetworKit/igraph  
-✅ **Iterate quickly** on discovery queries without writing Java  
-
-### Use cc-webgraph tools directly when you need to:
-
-❌ **Compute global metrics** over the full 93M node graph (e.g., PageRank on entire web)  
-❌ **Maximum performance** for batch processing millions of queries  
-❌ **Host-level graphs** (100B+ edges, requires more memory)  
-❌ **Advanced WebGraph features** (compression, specific graph algorithms)  
-
-**Rule of thumb:** If your workflow is "discover a subgraph → analyze in Python", use pyccwebgraph. If you're computing statistics over the entire graph or need maximum performance, use cc-webgraph's Java tools directly.
-
-### Comparison with Other Tools
-
-| Tool | Language | Use Case | Performance | Learning Curve |
-|------|----------|----------|-------------|----------------|
-| **pyccwebgraph** | Python | Interactive discovery + analysis | Fast queries, Python overhead | Low |
-| **cc-webgraph** | Java | Full-graph computation, batch jobs | Fastest | Medium |
-| **NetworkX** | Python | Small-medium graph analysis | Slow on large graphs | Low |
-| **NetworKit** | Python | Large-scale graph algorithms | Fast (C++ backend) | Medium |
-| **py-web-graph** | Python 2/Jython | Legacy exploration console | Slow (XML-RPC) | High |
-
----
-
-## 📖 Usage Guide
-
-### Basic Discovery
-
-```python
-from pyccwebgraph import CCWebgraph
-
-webgraph = CCWebgraph.setup()
+webgraph = CCWebgraph.setup(
+    webgraph_dir="/data/my-webgraph",
+    version="cc-main-2024-feb-apr-may"
+)
 
 # Find domains that link TO seeds (backlinks)
 results = webgraph.discover_backlinks(
     seeds=["cnn.com", "bbc.com", "nytimes.com"],
-    min_connections=10  # Must link to ≥10 of the seeds
+    min_connections=3  # Must link to all seeds
 )
 
 print(f"Found {len(results['nodes'])} domains")
@@ -187,7 +100,7 @@ print(f"Top result: {results['nodes'][0]}")
 # Get results as NetworkX graph
 G = webgraph.discover_backlinks(
     seeds=["cnn.com", "bbc.com"],
-    min_connections=5,
+    min_connections=2,
     format='networkx'  # Returns nx.DiGraph
 )
 
@@ -211,7 +124,7 @@ net.show("network.html")
 
 ### Performance: Large Graphs with NetworKit
 
-For large discovered subgraphs (>100K nodes), use NetworKit instead of NetworkX for 10-100x speedup:
+For large discovered subgraphs (>100K nodes), use NetworKit instead of NetworkX:
 
 ```python
 # Discover large subgraph
@@ -220,52 +133,9 @@ G_nk, name_map = webgraph.discover_backlinks(
     min_connections=2,
     format='networkit'  # Returns NetworKit graph
 )
-
-import networkit as nk
-
-# Fast PageRank (C++ backend)
-pr = nk.centrality.PageRank(G_nk).run().scores()
-
-# Fast community detection
-communities = nk.community.PLM(G_nk).run().getPartition()
-
-# Convert back to domain names
-id_to_domain = {v: k for k, v in name_map.items()}
-top_domain_id = max(range(len(pr)), key=lambda i: pr[i])
-print(f"Top domain: {id_to_domain[top_domain_id]}")
 ```
 
-### Graph Format Selection
-
-```python
-# Raw edges (default) - minimal overhead
-results = webgraph.discover_backlinks(seeds, format='edges')
-# Returns: {'nodes': [...], 'edges': [(src, tgt), ...]}
-
-# NetworkX - familiar API, best for small graphs
-G = webgraph.discover_backlinks(seeds, format='networkx')
-# Use when: <100K nodes, prototyping, using NX-specific algorithms
-
-# NetworKit - fast, best for large graphs
-G, name_map = webgraph.discover_backlinks(seeds, format='networkit')
-# Use when: >100K nodes, performance matters, large-scale analysis
-
-# igraph - balance of speed and usability
-G = webgraph.discover_backlinks(seeds, format='igraph')
-# Use when: medium graphs, clean API, faster than NetworkX
-```
-
-**Memory comparison:**
-- NetworkX: ~100 bytes per edge
-- igraph: ~24 bytes per edge
-- NetworKit: ~16 bytes per edge
-
-**Speed comparison (PageRank on 100K node graph):**
-- NetworkX: ~30 seconds
-- igraph: ~3 seconds
-- NetworKit: ~0.5 seconds
-
-### Advanced: Low-Level Graph Access
+### CC-Webgraph mapping
 
 ```python
 # Check if domain exists in graph
@@ -289,195 +159,7 @@ print(f"Missing: {missing}")
 
 ---
 
-## 📦 Working with Different Webgraph Versions
-
-CommonCrawl releases new webgraphs monthly. To use a specific version:
-
-```python
-from pyccwebgraph import CCWebgraph, get_available_versions
-
-# List available versions
-versions = get_available_versions()
-print(versions[:3])  # ['cc-main-2024-nov-dec-jan', 'cc-main-2024-feb-apr-may', ...]
-
-# Use specific version
-webgraph = CCWebgraph.setup(version="cc-main-2024-nov-dec-jan")
-```
-
-To use a custom webgraph location:
-
-```python
-webgraph = CCWebgraph.setup(
-    webgraph_dir="/data/my-webgraph",
-    version="cc-main-2024-feb-apr-may"
-)
-```
-
----
-
-## 🔧 Java Installation
-
-pyccwebgraph requires Java 17+ to run the WebGraph backend.
-
-### Ubuntu/Debian
-```bash
-sudo apt update
-sudo apt install openjdk-17-jdk
-```
-
-### macOS
-```bash
-brew install openjdk@17
-```
-
-### Windows
-Download from [Adoptium](https://adoptium.net/) (Eclipse Temurin 17)
-
-### Verify Installation
-```bash
-java -version
-# Should show version 17 or higher
-```
-
----
-
-## 🎓 Tutorial Notebooks
-
-Example notebooks are included in the `examples/` directory:
-
-1. **Getting Started** - Basic discovery and conversion
-2. **Graph Formats** - NetworkX vs NetworKit vs igraph comparison
-3. **Community Detection** - Using CDlib for community analysis
-4. **Centrality Analysis** - PageRank, betweenness, closeness
-5. **Graph Embeddings** - node2vec and structural similarity
-
-Run notebooks:
-```bash
-pip install pyccwebgraph[notebooks]
-jupyter notebook examples/
-```
-
----
-
-### Domain Discovery for Misinformation Research
-
-```python
-# Seed with known misinformation domains
-misinformation_seeds = [
-    "infowars.com",
-    "naturalnews.com", 
-    "breitbart.com"
-]
-
-# Find domains that link to these sources
-G = webgraph.discover_backlinks(
-    seeds=misinformation_seeds,
-    min_connections=3,
-).networkx()
-
-# Analyze network structure
-import networkx as nx
-from cdlib import algorithms
-
-# Community detection
-communities = algorithms.louvain(G)
-
-# Centrality
-pr = nx.pagerank(G)
-hub_domains = sorted(pr, key=pr.get, reverse=True)[:20]
-
-print(f"Discovered {G.number_of_nodes()} related domains")
-print(f"Top hubs: {hub_domains}")
-```
-
-### Citation Network Analysis
-
-```python
-# Find what news sources cite
-news_outlets = ["nytimes.com", "washingtonpost.com", "bbc.com"]
-
-# What do they link to?
-cited_sources = webgraph.shared_outlinks(
-    seeds=news_outlets,
-    min_connections=3  # Cited by all 3 outlets
-)
-
-# Convert to NetworkX for analysis
-G = webgraph.to_networkx(cited_sources['edges'])
-
-# Find most cited sources
-in_degree = dict(G.in_degree())
-top_cited = sorted(in_degree, key=in_degree.get, reverse=True)[:20]
-```
-
-### Structural Role Discovery
-
-```python
-# Use graph embeddings to find structurally similar domains
-from karateclub import Node2Vec
-
-G = webgraph.discover_backlinks(seed_domains).to_networkx()
-
-# Learn embeddings based on link structure
-model = Node2Vec()
-model.fit(G)
-embeddings = model.get_embedding()
-
-# Cluster domains by structural similarity
-from sklearn.cluster import KMeans
-clusters = KMeans(n_clusters=10).fit_predict(embeddings)
-
-# Map back to domains
-domains = list(G.nodes())
-for i in range(10):
-    cluster_domains = [domains[j] for j in range(len(domains)) if clusters[j] == i]
-    print(f"Cluster {i}: {cluster_domains[:5]}")
-```
-
----
-
-## 🐛 Troubleshooting
-
-### "Java not found" error
-
-```bash
-# Check Java installation
-java -version
-
-# Should show Java 17+
-# If not, see Java Installation section above
-```
-
-### Out of Memory Error
-
-```python
-# Use NetworKit instead of NetworkX for large graphs
-G, name_map = webgraph.discover_backlinks(
-    seeds, 
-    min_connections=2,  # min connections <= 3 will lead to large graphs
-).to_networkit
-```
-
-### Graph data download fails
-
-```python
-# Manual download location
-webgraph = CCWebgraph.setup(
-    webgraph_dir="/path/to/storage",
-    auto_download=True
-)
-```
-
-### "ImportError: networkit" when using to_networkx()
-
-```bash
-# NetworKit is optional
-pip install networkit
-```
-
----
-
-## 🔗 Links
+## Links
 
 - **Interactive demo:** https://github.com/PeterCarragher/NetNeighbors
 - **PyPI:** https://pypi.org/project/pyccwebgraph/
@@ -488,46 +170,3 @@ pip install networkit
 - **CommonCrawl Webgraphs:** https://commoncrawl.org/web-graphs
 - **cc-webgraph:** https://github.com/commoncrawl/cc-webgraph
 
----
-
-## 📚 Citation
-
-If you use pyccwebgraph in your research, please cite the following:
-
-```bibtex
-@article{carragher2025misinformation,
-  title={Misinformation resilient search rankings with webgraph-based interventions},
-  author={Carragher, Peter and Williams, Evan M and Carley, Kathleen M},
-  journal={ACM Transactions on Intelligent Systems and Technology},
-  volume={16},
-  number={1},
-  pages={1--27},
-  year={2025},
-  publisher={ACM New York, NY}
-}
-
-@inproceedings{boldi2004webgraph,
-  title={The webgraph framework I: compression techniques},
-  author={Boldi, Paolo and Vigna, Sebastiano},
-  booktitle={Proceedings of the 13th international conference on World Wide Web},
-  pages={595--602},
-  year={2004}
-}
-```
----
-
-## 🎯 Roadmap
-
-### v0.2 (Planned)
-- [ ] Streaming discovery for very large result sets
-- [ ] Graph statistics (degree distribution, clustering)
-- [ ] Batch query processing
-- [ ] Custom filter plugins (exclude CDNs, TLDs)
-
-### v1.0 (Future)
-- [ ] Temporal analysis across webgraph versions
-- [ ] Multi-hop discovery (2-3 hops away)
-- [ ] Ranking data integration (PageRank from cc-webgraph)
-- [ ] Host-level graph support
-
----
