@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyccwebgraph"
-version = "0.1.0"
+version = "0.3.1"
 description = "Python interface to CommonCrawl's 93M domain webgraph for network analysis and domain discovery"
 readme = "README.md"
 license = {text = "MIT"}
