@@ -57,10 +57,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/PeterCarragher/NetNeighbors"
-Documentation = "https://pyccwebgraph.readthedocs.io/"
-Repository = "https://github.com/PeterCarragher/NetNeighbors"
-Issues = "https://github.com/PeterCarragher/NetNeighbors/issues"
+Homepage = "https://github.com/PeterCarragher/pyccwebgraph"
+Documentation = "https://github.com/PeterCarragher/pyccwebgraph"
+Repository = "https://github.com/PeterCarragher/pyccwebgraph"
+Issues = "https://github.com/PeterCarragher/pyccwebgraph/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
